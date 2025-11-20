@@ -1,13 +1,10 @@
 # main.py
-import os
 import asyncio
 import json
 from datetime import datetime
-from dotenv import load_dotenv
 import pandas as pd
 import numpy as np
 import requests
-import websockets
 import ta
 from collections import defaultdict
 from sklearn.linear_model import SGDClassifier
@@ -17,10 +14,9 @@ import torch.nn as nn
 from sentence_transformers import SentenceTransformer
 
 # -----------------------
-# Load API keys
+# API keys
 # -----------------------
-load_dotenv()
-POLYGON_API_KEY = "ctosy8Ke3i4dsvhVjufB8KTLC0h1hDLV" 
+POLYGON_API_KEY = "ctosy8Ke3i4dsvhVjufB8KTLC0h1hDLV"
 CHUTES_API_KEY = "cpk_4a556b336b5049b8a27eb2bc9706db24.3356dfb634815d27ae2eed47a64faa54.KcKeGKlQKHexSABsIZCqVl9QjWvP3QkQ"
 
 # -----------------------
@@ -90,18 +86,19 @@ def fetch_news(symbol):
 
 def analyze_news_embeddings(news_items):
     if not news_items:
-        return np.zeros(384)  # embedding size of MiniLM-L6-v2
+        return np.zeros(32)  # reduced dim
     embeddings = nlp_model.encode(news_items)
-    return np.mean(embeddings, axis=0)
+    mean_emb = np.mean(embeddings, axis=0)
+    return mean_emb[:32]
 
 # -----------------------
 # Deep Learning Model
 # -----------------------
 class DeepTrader(nn.Module):
-    def __init__(self, input_dim, hidden_dim=128):
+    def __init__(self, input_dim, hidden_dim=64):
         super().__init__()
         self.lstm = nn.LSTM(input_dim, hidden_dim, batch_first=True)
-        self.fc = nn.Linear(hidden_dim, 3)  # long, short, no_trade
+        self.fc = nn.Linear(hidden_dim, 3)
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
@@ -123,24 +120,16 @@ class TradingAI:
 
     async def predict(self, feature_vector):
         X = feature_vector.reshape(1, -1)
-        # Online model prediction
         if self.initial_fit_done:
             online_pred = self.online_model.predict_proba(X)[0]
-        else:
-            online_pred = np.array([0.33,0.33,0.34])
-
-        # Batch model prediction
-        if self.initial_fit_done:
             batch_pred = self.batch_model.predict_proba(X)[0]
         else:
-            batch_pred = np.array([0.33,0.33,0.34])
+            online_pred = batch_pred = np.array([0.33,0.33,0.34])
 
-        # Deep model prediction
         with torch.no_grad():
             x_tensor = torch.tensor(feature_vector, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
             deep_pred = self.deep_model(x_tensor).numpy()[0]
 
-        # Ensemble: weighted average
         ensemble_pred = 0.4*online_pred + 0.3*batch_pred + 0.3*deep_pred
         action_index = np.argmax(ensemble_pred)
         action_map = {0:'long', 1:'short', 2:'no_trade'}
@@ -155,7 +144,7 @@ class TradingAI:
             self.online_model.partial_fit(X, y)
 
 # -----------------------
-# Simulated trade execution
+# Execute simulated trade
 # -----------------------
 async def execute_trade(symbol, mode, signal):
     if signal['confidence'] < CONFIDENCE_THRESHOLD or signal['action']=='no_trade':
@@ -178,23 +167,23 @@ async def monitor_symbol(symbol, mode, timeframe, feature_dim):
     ai = TradingAI(feature_dim)
     while True:
         try:
-            url = f"https://api.polygon.io/v2/aggs/ticker/{symbol}/range/1/{timeframe}/2025-01-01/{datetime.utcnow().strftime('%Y-%m-%d')}?adjusted=true&sort=asc&limit=500&apiKey={POLYGON_API_KEY}"
+            url = f"https://api.polygon.io/v2/aggs/ticker/{symbol}/range/1/{timeframe}/2025-01-01/{datetime.utcnow().strftime('%Y-%m-%d')}?adjusted=true&sort=asc&limit=20&apiKey={POLYGON_API_KEY}"
             resp = requests.get(url)
             data = resp.json()
             if 'results' not in data:
-                await asyncio.sleep(5)
+                await asyncio.sleep(2)
                 continue
             df = pd.DataFrame(data['results'])
             df.rename(columns={'o':'open','h':'high','l':'low','c':'close','v':'volume','t':'timestamp'}, inplace=True)
             df['t'] = pd.to_datetime(df['timestamp'], unit='ms')
             df = add_indicators(df)
             volume_profile = calculate_volume_profile(df)
-            dom_data = {'bids': [(r['close'], r['volume']) for _, r in df.tail(DOM_DEPTH).iterrows()],
-                        'asks': [(r['close'], r['volume']) for _, r in df.tail(DOM_DEPTH).iterrows()]}
+            dom_data = {'bids': [(r['close'], r['volume']) for _, r in df.iterrows()],
+                        'asks': [(r['close'], r['volume']) for _, r in df.iterrows()]}
             liquidity_zones = detect_liquidity_zones(dom_data)
             news_items = fetch_news(symbol)
             news_emb = analyze_news_embeddings(news_items)
-            # Feature vector: OHLC + indicators + VP stats + DOM + news embeddings
+
             features = np.array([
                 df['EMA25'].iloc[-1], df['EMA50'].iloc[-1], df['EMA75'].iloc[-1],
                 df['MACD'].iloc[-1], df['RSI'].iloc[-1], df['ATR'].iloc[-1],
@@ -204,29 +193,28 @@ async def monitor_symbol(symbol, mode, timeframe, feature_dim):
             features = np.concatenate([features, news_emb])
             signal = await ai.predict(features)
             await execute_trade(symbol, mode, signal)
-            # Update online model with placeholder label for now (simulate reward)
-            y_label = 2  # no_trade by default
+            y_label = 2  # no_trade placeholder
             ai.update_online_model(features.reshape(1,-1), [y_label])
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
         except Exception as e:
             print(f"[ERROR] {symbol} {mode}: {e}")
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
 
 # -----------------------
-# Retraining loop
+# Retrain loop
 # -----------------------
 async def retrain_models():
     while True:
         await asyncio.sleep(RETRAIN_INTERVAL)
-        print("[INFO] Retraining batch/deep models using TRADE_LOG...")
-        # TODO: retrain GradientBoostingClassifier & DeepTrader using trade history
+        print("[INFO] Retraining batch/deep models...")
+        # TODO: implement retraining logic using TRADE_LOG
         print("[INFO] Retraining complete.")
 
 # -----------------------
 # Main
 # -----------------------
 async def main():
-    feature_dim = 6+2+1+384  # indicators + VP mean/std + liquidity count + news embedding
+    feature_dim = 6+2+1+32  # indicators + VP mean/std + liquidity + news embeddings
     tasks = []
     for symbol in ALL_SYMBOLS:
         for mode, timeframe in TIMEFRAMES.items():
