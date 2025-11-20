@@ -1,9 +1,21 @@
+# Core
+python-dotenv
 pandas
 numpy
-matplotlib
-ta
 requests
+websockets
+asyncio
+
+# Technical Analysis
+ta
+
+# Machine Learning / AI
 torch
 scikit-learn
-python-dotenv
-websocket-client
+
+# NLP / Sentiment
+transformers
+sentence-transformers
+
+# Misc
+tqdm
