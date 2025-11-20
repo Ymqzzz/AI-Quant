@@ -1,0 +1,9 @@
+pandas
+numpy
+matplotlib
+ta
+requests
+torch
+scikit-learn
+python-dotenv
+websocket-client
