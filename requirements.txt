@@ -1,11 +1,11 @@
 fastapi
 uvicorn
-jinja2 
-python-multipart
+websockets
+aiohttp
 numpy
 pandas
-aiohttp
-websockets
 torch
 scikit-learn
-colorlog
+sentence-transformers
+jinja2
+python-multipart
