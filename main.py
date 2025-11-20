@@ -32,8 +32,8 @@ import uvicorn
 REPLAY_BUFFER_SIZE = 5000
 BATCH_SIZE = 64
 
-POLYGON_API_KEY = os.getenv("POLYGON_API_KEY", "YOUR_KEY_HERE")
-CHUTES_API_KEY = os.getenv("CHUTES_API_KEY", "YOUR_KEY_HERE")
+POLYGON_API_KEY = os.getenv("POLYGON_API_KEY", "ctosy8Ke3i4dsvhVjufB8KTLC0h1hDLV")
+CHUTES_API_KEY = os.getenv("CHUTES_API_KEY", "cpk_4a556b336b5049b8a27eb2bc9706db24.3356dfb634815d27ae2eed47a64faa54.KcKeGKlQKHexSABsIZCqVl9QjWvP3QkQ")
 
 # FIX: Increased tick size for high-price stocks to manage memory (2)
 PRICE_TICK_SIZE = 0.5
