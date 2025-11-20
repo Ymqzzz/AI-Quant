@@ -20,8 +20,8 @@ from sentence_transformers import SentenceTransformer
 # Load API keys
 # -----------------------
 load_dotenv()
-POLYGON_API_KEY = os.getenv("POLYGON_API_KEY")
-CHUTES_API_KEY = os.getenv("CHUTES_API_KEY")
+POLYGON_API_KEY = "ctosy8Ke3i4dsvhVjufB8KTLC0h1hDLV" 
+CHUTES_API_KEY = "cpk_4a556b336b5049b8a27eb2bc9706db24.3356dfb634815d27ae2eed47a64faa54.KcKeGKlQKHexSABsIZCqVl9QjWvP3QkQ"
 
 # -----------------------
 # Config
