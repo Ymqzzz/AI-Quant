@@ -1,11 +1,10 @@
-python-dotenv
+fastapi
+uvicorn
+aiohttp
 pandas
 numpy
 requests
-websockets
-ta
-torch
 scikit-learn
-transformers
+torch
 sentence-transformers
-tqdm
+ta
