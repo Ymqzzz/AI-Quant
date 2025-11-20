@@ -1,10 +1,7 @@
-fastapi
-uvicorn
-aiohttp
-pandas
 numpy
-requests
-scikit-learn
+pandas
+aiohttp
+websockets
 torch
-sentence-transformers
-ta
+scikit-learn
+colorlog
