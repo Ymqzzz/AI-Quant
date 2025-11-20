@@ -1,21 +1,11 @@
-# Core
 python-dotenv
 pandas
 numpy
 requests
 websockets
-asyncio
-
-# Technical Analysis
 ta
-
-# Machine Learning / AI
 torch
 scikit-learn
-
-# NLP / Sentiment
 transformers
 sentence-transformers
-
-# Misc
 tqdm
