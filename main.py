@@ -29,7 +29,7 @@ import uvicorn
 # ==========================================
 REPLAY_BUFFER_SIZE = 5000
 BATCH_SIZE = 64
-POLYGON_API_KEY = "ctosy8Ke3i4dsvhVjufB8KTLC0h1hDLV") 
+POLYGON_API_KEY = "ctosy8Ke3i4dsvhVjufB8KTLC0h1hDLV"
 CHUTES_API_KEY = "cpk_4a556b336b5049b8a27eb2bc9706db24.3356dfb634815d27ae2eed47a64faa54.KcKeGKlQKHexSABsIZCqVl9QjWvP3QkQ"
 PRICE_TICK_SIZE = 0.5
 
